@@ -1,0 +1,13 @@
+.git
+.github
+.gradle
+.idea
+.env
+build
+node_modules
+public
+tmp
+__tests__
+playwright.config.ts
+contract
+*.md

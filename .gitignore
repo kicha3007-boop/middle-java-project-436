@@ -1,0 +1,23 @@
+# Gradle
+.gradle/
+build/
+
+# npm и собранная статика фронтенда (раскладывается make build)
+node_modules/
+public/
+
+# Артефакты браузерных тестов
+tmp/
+test-results/
+playwright-report/
+
+# Локальные настройки окружения
+.env
+
+# IDE и системные файлы
+.idea/
+*.iml
+.vscode/
+bin/
+.DS_Store
+*.log

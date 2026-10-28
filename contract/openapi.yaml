@@ -1,0 +1,610 @@
+openapi: 3.0.0
+info:
+  title: Online Store API
+  version: 1.0.0
+tags:
+  - name: Service
+  - name: Auth
+  - name: Catalog
+  - name: Home
+  - name: Orders
+paths:
+  /api/categories:
+    get:
+      operationId: Categories_list
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+      tags:
+        - Catalog
+  /api/health:
+    get:
+      operationId: HealthCheck_get
+      description: Проверка живости, не зависит от базы.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+      tags:
+        - Service
+  /api/me:
+    get:
+      operationId: Me_get
+      description: Текущий пользователь; аноним получает 401.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+      tags:
+        - Auth
+  /api/orders:
+    post:
+      operationId: Orders_create
+      description: Оформление заказа. Сервер сам берёт цены и считает итог; отказ — целиком.
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+    get:
+      operationId: Orders_list
+      description: Заказы текущего пользователя, новые первыми.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+      tags:
+        - Orders
+  /api/orders/{id}:
+    get:
+      operationId: Orders_getById
+      description: Свой заказ; чужой или несуществующий — 404.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+      tags:
+        - Orders
+  /api/products:
+    get:
+      operationId: Products_list
+      description: 'Каталог: фильтры комбинируются, фильтрация и пагинация — на сервере.'
+      parameters:
+        - name: category
+          in: query
+          required: false
+          description: Слаг категории.
+          schema:
+            type: string
+          explode: false
+        - name: q
+          in: query
+          required: false
+          description: Подстрока названия без учёта регистра.
+          schema:
+            type: string
+          explode: false
+        - name: priceMin
+          in: query
+          required: false
+          description: Нижняя граница цены включительно.
+          schema:
+            type: integer
+            format: int32
+          explode: false
+        - name: priceMax
+          in: query
+          required: false
+          description: Верхняя граница цены включительно.
+          schema:
+            type: integer
+            format: int32
+          explode: false
+        - name: available
+          in: query
+          required: false
+          description: true — только доступные, false — только недоступные, нет параметра — все.
+          schema:
+            type: boolean
+          explode: false
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            default: 1
+          explode: false
+        - name: perPage
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 48
+            default: 6
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPage'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+      tags:
+        - Catalog
+  /api/products/{id}:
+    get:
+      operationId: Products_getById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+      tags:
+        - Catalog
+  /api/promos:
+    get:
+      operationId: Promos_list
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Promo'
+      tags:
+        - Home
+  /api/session:
+    post:
+      operationId: Session_create
+      description: Вход. Открывает сессию.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+    delete:
+      operationId: Session_destroy
+      description: Выход. Завершает сессию на сервере.
+      parameters: []
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+      tags:
+        - Auth
+  /api/users:
+    post:
+      operationId: Users_register
+      description: Регистрация. Открывает сессию.
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+components:
+  schemas:
+    CartItem:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+      description: 'Позиция корзины: только товар и количество, цены клиент не присылает.'
+    Category:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+          description: Слаг латиницей без пробелов, например videokarty.
+        name:
+          type: string
+    CreateOrderRequest:
+      type: object
+      required:
+        - items
+        - shipping
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+          minItems: 1
+        shipping:
+          $ref: '#/components/schemas/ShippingDetails'
+    Credentials:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+    Health:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+    Money:
+      type: object
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: integer
+          format: int32
+        currency:
+          type: string
+          enum:
+            - RUB
+      description: Денежная сумма в целых рублях.
+    Order:
+      type: object
+      required:
+        - id
+        - status
+        - items
+        - shipping
+        - total
+        - createdAt
+      properties:
+        id:
+          type: string
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        shipping:
+          $ref: '#/components/schemas/ShippingDetails'
+        total:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: Итог, посчитанный сервером по текущим ценам.
+        createdAt:
+          type: string
+          format: date-time
+          description: Момент создания в UTC.
+    OrderItem:
+      type: object
+      required:
+        - productId
+        - productName
+        - priceAtPurchase
+        - quantity
+      properties:
+        productId:
+          type: string
+        productName:
+          type: string
+        priceAtPurchase:
+          $ref: '#/components/schemas/Money'
+        quantity:
+          type: integer
+          format: int32
+      description: Позиция заказа — снимок названия и цены на момент покупки.
+    OrderStatus:
+      type: string
+      enum:
+        - paid
+    PageMeta:
+      type: object
+      required:
+        - page
+        - perPage
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          format: int32
+        perPage:
+          type: integer
+          format: int32
+        total:
+          type: integer
+          format: int32
+          description: Число товаров, подходящих под фильтр, а не размер страницы.
+        totalPages:
+          type: integer
+          format: int32
+    ProblemDetails:
+      type: object
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          $ref: '#/components/schemas/ProblemType'
+        title:
+          type: string
+          description: Техническое название ошибки для разработчика.
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+          description: Техническое пояснение конкретного случая.
+        unavailableProductIds:
+          type: array
+          items:
+            type: string
+          description: Все товары, из-за которых заказ отклонён (только для unavailable-items).
+      description: Ошибка в формате Problem Details (RFC 9457). Текст для пользователя фронтенд выбирает по type.
+    ProblemType:
+      type: string
+      enum:
+        - https://hexlet.io/problems/invalid-credentials
+        - https://hexlet.io/problems/email-taken
+        - https://hexlet.io/problems/address-required
+        - https://hexlet.io/problems/unavailable-items
+        - https://hexlet.io/problems/validation-error
+        - https://hexlet.io/problems/unauthorized
+        - https://hexlet.io/problems/not-found
+        - https://hexlet.io/problems/internal-error
+      description: Закрытый словарь типов ошибок. Новый случай начинается с правки этого перечисления.
+    Product:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+        - description
+        - price
+        - categoryId
+        - available
+      properties:
+        id:
+          type: string
+          description: Идентификатор; им заканчивается адрес страницы товара.
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          $ref: '#/components/schemas/Money'
+        categoryId:
+          type: string
+        imageUrl:
+          type: string
+          description: Путь к изображению. У товара без изображения поля нет.
+        available:
+          type: boolean
+    ProductPage:
+      type: object
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+    Promo:
+      type: object
+      required:
+        - id
+        - title
+        - text
+        - product
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        text:
+          type: string
+        product:
+          allOf:
+            - $ref: '#/components/schemas/Product'
+          description: Товар целиком, в том же виде, что в каталоге.
+    ShippingDetails:
+      type: object
+      required:
+        - method
+        - recipientName
+        - phone
+      properties:
+        method:
+          $ref: '#/components/schemas/ShippingMethod'
+        recipientName:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+          description: Обязателен при delivery.
+    ShippingMethod:
+      type: string
+      enum:
+        - delivery
+        - pickup
+    User:
+      type: object
+      required:
+        - id
+        - email
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+servers:
+  - url: http://localhost:8080
+    description: Локальный запуск
+    variables: {}

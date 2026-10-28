@@ -1,0 +1,21 @@
+{
+  "name": "@hexlet/code",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Бекенд интернет-магазина комплектующих: npm нужен для фронтенда Хекслета, TypeSpec и браузерных тестов",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "contract": "tsp compile contract"
+  },
+  "dependencies": {
+    "@hexlet/java-online-store-frontend": "^1.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@typespec/compiler": "^1.17.0",
+    "@typespec/http": "^1.17.0",
+    "@typespec/openapi": "^1.17.0",
+    "@typespec/openapi3": "^1.17.0"
+  }
+}

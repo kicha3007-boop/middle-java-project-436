@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: appdb
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgres://postgres:password@localhost:5432/appdb
+      APP_URL: http://localhost:8080
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - run: make install
+
+      - name: Линтер
+        run: make lint
+
+      - name: Спецификация OpenAPI совпадает с TypeSpec
+        run: |
+          make contract
+          git diff --exit-code contract/openapi.yaml
+
+      - name: Тесты API
+        run: make test
+
+      - run: make build
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Запустить приложение в фоне
+        run: |
+          make start > app.log 2>&1 &
+          timeout 120 sh -c 'until curl -sf "$APP_URL/api/health" > /dev/null; do sleep 1; done'
+
+      - name: Браузерные тесты Хекслета
+        run: make test-e2e
+
+      - name: Артефакты упавшего прогона
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: |
+            app.log
+            tmp/artifacts
+            build/reports
